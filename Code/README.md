@@ -25,8 +25,8 @@ This option is meant for **code review**.
 
 ### 1) Clone
 ```bash
-git clone <REPO_URL>
-cd <REPO_FOLDER>
+git clone <https://github.com/oferElz/Nappi>
+cd <Nappi>
 2) Where the code is
 
 Inside the Code/ folder:
