@@ -5,8 +5,12 @@ This repository is the **merged submission repo** (Backend + Frontend + IoT/Moni
 ## Option 1 - Run the deployed demo
 No installation required.
 
-1. Open: https://nappi-frontend.vercel.app/
-2. Sign in with one of the demo users:
+1. Open: https://nappi-backend.onrender.com/docs  
+   This wakes up our backend (deployed on Render free-tier).  
+   Once it loads and you see the FastAPI Swagger UI, the backend is running.
+2. Open: https://nappi-frontend.vercel.app/  
+   (If step 1 is skipped, login attempts may appear as if the credentials are wrong)
+3. Sign in with one of the demo users:
 
 - **demo@nappi.app** / **demo123** (baby: *Emma Cohen*, 3mo)
 - **david@nappi.app** / **david123** (baby: *Noah Levy*, 7mo)
@@ -33,10 +37,9 @@ Frontend/ — React + TypeScript frontend
 
 Monitor/ — IoT / monitoring side (M5Stack + UnitV2 camera)
 ```
+### Note
 
-### Note:
 We do not include environment files in this repo.
 In our deployment, the backend environment variables were set directly in the hosting platform (Render).
 
 So, running locally is not expected to work out-of-the-box without setting your own credentials (DB / Gemini key / etc.).
-
