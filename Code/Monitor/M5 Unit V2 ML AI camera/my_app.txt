@@ -1,0 +1,116 @@
+import time
+import sys
+import cv2
+import serial
+import json
+import numpy as np
+import tflite_runtime.interpreter as tflite
+
+# --- Configuration ---
+MODEL_PATH = "/home/notebook/model.tflite"
+LABELS_PATH = "/home/notebook/labels.txt"
+
+UART_PORT = "/dev/ttyS1"
+BAUD_RATE = 115200
+
+# --- Override Option for validation ---
+# None  -> normal classification from the image
+# 0     -> always "Awake"
+# 1     -> always "Asleep"
+# 2     -> always "No Baby Found"
+FORCED_CLASS_INDEX = None
+
+# --- Setup UART ---
+try:
+    uart = serial.Serial(UART_PORT, BAUD_RATE, timeout=0.1)
+    print(f"UART opened on {UART_PORT}")
+    uart_available = True
+except Exception as e:
+    print(f"UART Error: {e}")
+    uart_available = False
+
+# --- Setup Model ---
+print(f"Loading Model from {MODEL_PATH}...")
+try:
+    with open(LABELS_PATH, "r") as f:
+        labels = [line.strip() for line in f.readlines() if line.strip()]
+
+    interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    input_shape = input_details[0]["shape"]
+    height = int(input_shape[1])
+    width = int(input_shape[2])
+    input_index = input_details[0]["index"]
+    input_type = input_details[0]["dtype"]
+
+    output_index = output_details[0]["index"]
+    output_type = output_details[0]["dtype"]
+
+except Exception as e:
+    print(f"Model Load Error: {e}")
+    sys.exit(1)
+
+# --- Main Loop ---
+cap = cv2.VideoCapture(0)
+
+while True:
+    loop_start = time.time()
+
+    # 1) Capture Frame
+    ret, frame = cap.read()
+    if not ret:
+        time.sleep(1)
+        continue
+
+    # 2) Pre-process for Model
+    img = cv2.resize(frame, (width, height))
+
+    # Handle Input Type (Quantized vs Float)
+    if input_type == np.float32:
+        input_data = np.expand_dims(img, axis=0).astype(np.float32) / 255.0
+    else:
+        input_data = np.expand_dims(img, axis=0).astype(input_type)
+
+    # 3) Run Inference
+    if FORCED_CLASS_INDEX is None:
+        interpreter.set_tensor(input_index, input_data)
+        interpreter.invoke()
+
+        output_data = interpreter.get_tensor(output_index)
+        prediction_index = int(np.argmax(output_data))
+
+        raw_score = output_data[0][prediction_index]
+        if output_type == np.float32:
+            confidence = int(float(raw_score) * 100)
+        else:
+            # quantized outputs (0..255)
+            confidence = int((float(raw_score) / 255.0) * 100)
+    else:
+        prediction_index = int(FORCED_CLASS_INDEX)
+        confidence = 100  # forced
+
+    verdict = labels[prediction_index]
+
+    # 4) Create JSON
+    payload = {
+        "verdict": verdict,
+        "conf": confidence
+    }
+
+    json_str = json.dumps(payload)
+
+    # 5) Send via UART
+    if uart_available:
+        try:
+            uart.write((json_str + "\n").encode())
+        except Exception as e:
+            print(f"UART Write Fail: {e}")
+
+
+    # 7) Keep loop rate ~2s
+    process_time = time.time() - loop_start
+    time.sleep(max(0, 2 - process_time))
