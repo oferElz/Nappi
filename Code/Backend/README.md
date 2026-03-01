@@ -1,4 +1,4 @@
-# Nappi Baby Monitor API
+# Nappi Baby Monitor Backend API 
 
 Backend API for baby sleep and room monitoring system. This FastAPI application tracks sleep patterns, monitors room conditions (temperature, humidity, noise), provides AI-powered insights via Google Gemini, and delivers real-time alerts through SSE and Web Push.
 
