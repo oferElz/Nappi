@@ -1,7 +1,7 @@
 # Nappi - Repository Overview
 
 This is the merged submission repository for the **Nappi** project.  
-It includes Phase A + Phase B academic deliverables, and the full system implementation (backend, frontend, and IoT).
+It includes Phase 1 + Phase 2 academic deliverables, and the full system implementation (backend, frontend, and IoT).
 
 ---
 
